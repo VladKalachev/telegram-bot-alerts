@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { TelegramModule } from './telegram/telegram.module';
+import { NotionModule } from './notion/notion.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [TelegramModule, NotionModule],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
