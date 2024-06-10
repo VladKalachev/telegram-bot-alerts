@@ -16,7 +16,6 @@ export class TelegramService {
 
   @Start()
   async startCommand(ctx: Context) {
-    console.log('Start', ctx.message.chat.id);
     await ctx.reply(`Привет, ${ctx.message.from.first_name}!`);
   }
 
