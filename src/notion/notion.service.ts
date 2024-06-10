@@ -1,14 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Client } from '@notionhq/client';
-import { QueryDatabaseResponse } from '@notionhq/client/build/src/api-endpoints';
+import { TelegramService } from 'src/telegram/telegram.service';
 
 @Injectable()
 export class NotionService {
   private readonly notion: Client;
   private readonly logger = new Logger(NotionService.name);
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly telegramService: TelegramService,
+  ) {
     const notionToken = this.configService.get<string>('NOTION_API_KEY');
     if (!notionToken) {
       this.logger.error('NOTION_API_KEY is not defined');
@@ -35,15 +39,52 @@ export class NotionService {
       const entries = response.results.map((page) => {
         const properties = (page as any).properties;
         return {
+          id: page.id,
           Name: properties.Name.title[0]?.plain_text,
           Date: properties.Date.date?.start,
         };
       });
 
-      console.log(entries);
+      return entries;
     } catch (error) {
       this.logger.error(`Error fetching database entries: ${error.message}`);
       throw error;
+    }
+  }
+
+  @Cron(CronExpression.EVERY_6_HOURS, { timeZone: 'Europe/Moscow' })
+  async handleCron() {
+    try {
+      this.logger.log('Fetching database entries from Notion');
+      const records = await this.getDatabaseEntries();
+      console.log(records);
+      const currentDate = new Date();
+
+      for (const record of records) {
+        if (!record.Date || !record.Name) {
+          this.logger.warn('Entry is missing Date or Name field', record);
+          continue;
+        }
+
+        const entryDate = new Date(record.Date);
+
+        if (entryDate > currentDate) {
+          const existingMessages =
+            await this.telegramService.getScheduledMessages();
+
+          console.log('existingMessages', existingMessages);
+
+          if (!existingMessages.includes(record.id)) {
+            this.telegramService.scheduleMessage(
+              record.Name,
+              record.Date,
+              record.id,
+            );
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.error('Error in scheduled task', error);
     }
   }
 }
