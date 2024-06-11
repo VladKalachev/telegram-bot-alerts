@@ -52,7 +52,7 @@ export class NotionService {
     }
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS, { timeZone: 'Europe/Moscow' })
+  @Cron(CronExpression.EVERY_6_HOURS, { timeZone: 'Europe/Moscow' })
   async handleCron() {
     try {
       this.logger.log('Fetching database entries from Notion');
