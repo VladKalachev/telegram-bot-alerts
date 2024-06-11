@@ -22,6 +22,7 @@ export class NotionService {
 
     this.notion = new Client({ auth: notionToken });
     this.logger.log('Notion client initialized');
+    this.handleCron();
   }
 
   async getDatabaseEntries() {
@@ -52,7 +53,7 @@ export class NotionService {
     }
   }
 
-  @Cron(CronExpression.EVERY_6_HOURS, { timeZone: 'Europe/Moscow' })
+  @Cron(CronExpression.EVERY_10_MINUTES, { timeZone: 'Europe/Moscow' })
   async handleCron() {
     try {
       this.logger.log('Fetching database entries from Notion');
