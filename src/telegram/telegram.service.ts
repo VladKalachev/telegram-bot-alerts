@@ -6,7 +6,6 @@ import { Context, Telegraf } from 'telegraf';
 @Injectable()
 @Update()
 export class TelegramService {
-  private scheduledMessages: Set<string> = new Set();
   private readonly logger = new Logger(TelegramService.name);
 
   constructor(
