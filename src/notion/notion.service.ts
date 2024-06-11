@@ -8,6 +8,7 @@ import { TelegramService } from 'src/telegram/telegram.service';
 export class NotionService {
   private readonly notion: Client;
   private readonly logger = new Logger(NotionService.name);
+  private sentMessages: Set<string> = new Set();
 
   constructor(
     private readonly configService: ConfigService,
@@ -21,7 +22,6 @@ export class NotionService {
 
     this.notion = new Client({ auth: notionToken });
     this.logger.log('Notion client initialized');
-    this.getDatabaseEntries();
   }
 
   async getDatabaseEntries() {
@@ -52,13 +52,12 @@ export class NotionService {
     }
   }
 
-  @Cron(CronExpression.EVERY_6_HOURS, { timeZone: 'Europe/Moscow' })
+  @Cron(CronExpression.EVERY_10_SECONDS, { timeZone: 'Europe/Moscow' })
   async handleCron() {
     try {
       this.logger.log('Fetching database entries from Notion');
       const records = await this.getDatabaseEntries();
-      console.log(records);
-      const currentDate = new Date();
+      const today = new Date().toISOString().split('T')[0]; // Формат YYYY-MM-DD
 
       for (const record of records) {
         if (!record.Date || !record.Name) {
@@ -66,20 +65,13 @@ export class NotionService {
           continue;
         }
 
-        const entryDate = new Date(record.Date);
+        const recordDate = new Date(record.Date).toISOString().split('T')[0];
 
-        if (entryDate > currentDate) {
-          const existingMessages =
-            await this.telegramService.getScheduledMessages();
-
-          console.log('existingMessages', existingMessages);
-
-          if (!existingMessages.includes(record.id)) {
-            this.telegramService.scheduleMessage(
-              record.Name,
-              record.Date,
-              record.id,
-            );
+        if (recordDate === today) {
+          if (!this.sentMessages.has(record.id)) {
+            const chatId = this.configService.get<string>('TELEGRAM_CHAT_ID');
+            await this.telegramService.sendMessage(chatId, record.Name);
+            this.sentMessages.add(record.id);
           }
         }
       }

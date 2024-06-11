@@ -27,26 +27,26 @@ export class TelegramService {
     }
   }
 
-  scheduleMessage(text: string, date: string, id: string) {
-    const targetDate = new Date(date);
+  async scheduleMessage(text: string, date: string, id: string) {
+    // const targetDate = new Date(date);
 
-    const delay = targetDate.getTime() - Date.now();
+    // const delay = targetDate.getTime() - Date.now();
 
-    console.log('delay', id, delay);
+    // console.log('delay', id, delay);
 
-    if (delay > 0) {
-      setTimeout(async () => {
-        const chatId = this.configService.get<string>('TELEGRAM_CHAT_ID');
-        await this.sendMessage(chatId, text);
-        this.scheduledMessages.delete(id);
-        this.logger.log(`Scheduled message sent: ${text} at ${date}`);
-      }, delay);
+    // if (delay > 0) {
+    // setTimeout(async () => {
+    const chatId = this.configService.get<string>('TELEGRAM_CHAT_ID');
+    await this.sendMessage(chatId, text);
+    this.scheduledMessages.delete(id);
+    this.logger.log(`Scheduled message sent: ${text} at ${date}`);
+    // }, delay);
 
-      this.scheduledMessages.add(id);
-      this.logger.log(`Message scheduled: ${text} at ${date}`);
-    } else {
-      this.logger.warn(`Scheduled date ${date} is in the past. Skipping.`);
-    }
+    this.scheduledMessages.add(id);
+    this.logger.log(`Message scheduled: ${text} at ${date}`);
+    // } else {
+    //   this.logger.warn(`Scheduled date ${date} is in the past. Skipping.`);
+    // }
   }
 
   async getScheduledMessages(): Promise<string[]> {
